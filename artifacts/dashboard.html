@@ -1,0 +1,4243 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recover — failed payment recovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper:#eef2f7;
+    --card:#ffffff;
+    --ink:#0b1b2b;
+    --muted:#5c7189;
+    --rule:#d6dfe9;
+    --recovered:#0e7c6b;
+    --lost:#b4443a;
+    --signal:#1b4dff;
+    --tape:#fbfaf7;
+    --display:"Fraunces",Georgia,serif;
+    --body:"Archivo",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:16px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px 96px}
+  a{color:var(--signal)}
+
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 10px;
+  }
+
+  /* ---- masthead ---- */
+  header{padding:72px 0 40px;border-bottom:1px solid var(--rule)}
+  h1{
+    font-family:var(--display);font-weight:700;
+    font-size:clamp(40px,7vw,74px);line-height:.98;letter-spacing:-.025em;
+    margin:0 0 18px;
+  }
+  h1 em{font-style:italic;color:var(--recovered)}
+  .standfirst{
+    max-width:60ch;font-size:clamp(16px,2.1vw,19px);color:#31465c;margin:0;
+  }
+  .meta{
+    margin-top:26px;display:flex;flex-wrap:wrap;gap:8px 26px;
+    font-family:var(--mono);font-size:12px;color:var(--muted);
+  }
+  .meta b{color:var(--ink);font-weight:600}
+
+  /* ---- headline figures ---- */
+  .figures{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:1px;background:var(--rule);border:1px solid var(--rule);
+    margin:44px 0 0;
+  }
+  .fig{background:var(--card);padding:22px 20px}
+  .fig .n{
+    font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,42px);
+    line-height:1;letter-spacing:-.02em;display:block;
+  }
+  .fig .n.up{color:var(--recovered)}
+  .fig .l{display:block;margin-top:9px;font-size:13px;color:var(--muted);max-width:24ch}
+
+  section{padding:56px 0 0}
+  h2{
+    font-family:var(--display);font-weight:700;font-size:clamp(24px,3.4vw,32px);
+    letter-spacing:-.02em;margin:0 0 8px;
+  }
+  .lede{color:var(--muted);max-width:64ch;margin:0 0 28px;font-size:15px}
+
+  /* ---- ablation ladder (the thesis) ---- */
+  .ladder{border-top:1px solid var(--rule)}
+  .rung{
+    display:grid;grid-template-columns:210px 1fr 118px;gap:16px;align-items:center;
+    padding:15px 0;border-bottom:1px solid var(--rule);
+  }
+  .rung .name{font-size:14px;font-weight:500}
+  .rung .name span{display:block;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .track{position:relative;height:26px;background:#e4ebf3}
+  .bar{
+    height:100%;background:var(--recovered);width:0;
+    transition:width .9s cubic-bezier(.22,1,.36,1);
+  }
+  .rung:nth-child(2) .bar{transition-delay:.05s}
+  .rung:nth-child(3) .bar{transition-delay:.15s}
+  .rung:nth-child(4) .bar{transition-delay:.25s}
+  .rung:nth-child(5) .bar{transition-delay:.35s}
+  .rung.base .bar{background:#8fa3b8}
+  .marker{
+    position:absolute;top:-7px;bottom:-7px;width:0;border-left:2px dashed var(--lost);
+  }
+  .marker b{
+    position:absolute;top:-19px;left:6px;font-family:var(--mono);
+    font-size:10px;letter-spacing:.08em;color:var(--lost);white-space:nowrap;
+  }
+  .rung .v{font-family:var(--mono);font-size:14px;text-align:right;font-weight:500}
+
+  /* ---- scorecard ---- */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:right;padding:11px 10px;border-bottom:1px solid var(--rule)}
+  th:first-child,td:first-child{text-align:left;padding-left:0}
+  th{
+    font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);font-weight:500;
+  }
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  td.good{color:var(--recovered);font-weight:600}
+  td.bad{color:var(--lost);font-weight:600}
+  tr.total td{border-top:2px solid var(--ink);font-weight:600}
+
+  .split{display:grid;grid-template-columns:1fr;gap:36px}
+  @media(min-width:860px){.split{grid-template-columns:1fr 1fr;gap:48px}}
+
+  /* ---- cause bars ---- */
+  .cause{padding:11px 0;border-bottom:1px solid var(--rule)}
+  .cause .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .cause .k{font-size:14px;font-weight:500}
+  .cause .k small{display:block;font-weight:400;color:var(--muted);font-size:12px;max-width:44ch}
+  .cause .pct{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .cause .pct b{color:var(--recovered)}
+  .duo{margin-top:9px;display:grid;gap:3px}
+  .duo i{display:block;height:7px;background:#8fa3b8;width:0;transition:width .8s ease}
+  .duo i.a{background:var(--recovered)}
+
+  /* ---- signature: the decision tape ---- */
+  .filters{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 22px}
+  .filters button{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    padding:7px 12px;background:transparent;border:1px solid var(--rule);
+    color:var(--muted);cursor:pointer;border-radius:0;
+  }
+  .filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .filters button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+  .tapes{display:grid;gap:20px;grid-template-columns:1fr}
+  @media(min-width:760px){.tapes{grid-template-columns:1fr 1fr}}
+
+  .tape{
+    background:var(--tape);border:1px solid var(--rule);font-family:var(--mono);
+    font-size:12px;line-height:1.62;padding:18px 18px 0;position:relative;
+  }
+  /* torn receipt edge */
+  .tape::after{
+    content:"";display:block;height:12px;margin:0 -18px;
+    background:
+      radial-gradient(circle at 6px 12px, transparent 6px, var(--tape) 6.5px) repeat-x;
+    background-size:12px 12px;
+  }
+  .tape .hd{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding-bottom:10px;border-bottom:1px dashed var(--rule);
+  }
+  .tape .amt{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:-.01em}
+  .tape .id{color:var(--muted);font-size:11px}
+  .row{display:flex;justify-content:space-between;gap:14px;padding:3px 0}
+  .row span:first-child{color:var(--muted)}
+  .row span:last-child{text-align:right}
+  .why{
+    padding:9px 0;margin:8px 0;border-top:1px dashed var(--rule);
+    border-bottom:1px dashed var(--rule);color:#31465c;font-family:var(--body);font-size:13px;
+  }
+  .step{display:grid;grid-template-columns:20px 1fr;gap:9px;padding:6px 0}
+  .step .n{color:var(--muted)}
+  .step .b{font-weight:600}
+  .step .d{color:var(--muted)}
+  .stamp{
+    display:inline-block;margin:10px 0 4px;padding:3px 9px;font-size:10px;
+    letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--lost);color:var(--lost);
+  }
+  .msg{
+    margin:10px 0 4px;padding:10px 12px;background:#fff;border:1px solid var(--rule);
+    font-family:var(--body);font-size:13px;color:#31465c;
+  }
+  .msg b{
+    display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-weight:500;
+  }
+  .versus{
+    margin:12px -18px 0;padding:11px 18px;background:#f1f0ec;border-top:1px solid var(--rule);
+    color:var(--muted);font-size:11px;
+  }
+  .versus b{color:var(--lost);font-weight:500}
+
+  footer{
+    margin-top:72px;padding-top:26px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8;
+  }
+  @media(prefers-reduced-motion:reduce){
+    .bar,.duo i{transition:none !important}
+  }
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Every failed payment is a decision, <em>not a retry</em>.</h1>
+  <p class="standfirst">
+    Recover reads a failed payment, works out why it actually failed, and picks
+    the one action most likely to bring the money back — which rail, which
+    moment, which channel, or nothing at all. Measured against the fixed
+    <span style="font-family:var(--mono);font-size:.92em">+1h / +24h / +72h</span>
+    schedule most dunning runs on today.
+  </p>
+  <div class="meta" id="meta"></div>
+</header>
+
+<div class="figures" id="figures"></div>
+
+<section>
+  <h2>Where the money comes from</h2>
+  <p class="lede">
+    Each rung adds exactly one capability to the one above it, on the same
+    held-out payments in the same world. Net rupees, after every attempt fee,
+    message cost and risk penalty.
+  </p>
+  <div class="ladder" id="ladder"></div>
+</section>
+
+<section class="split">
+  <div>
+    <h2>Scorecard</h2>
+    <p class="lede">Held-out payments only. The model never saw them.</p>
+    <table id="scorecard"></table>
+  </div>
+  <div>
+    <h2>By root cause</h2>
+    <p class="lede">
+      Teal is Recover, grey is the fixed schedule. The gaps are where a
+      schedule cannot help: it has no way to notice a bank came back up, and no
+      way to stop.
+    </p>
+    <div id="causes"></div>
+  </div>
+</section>
+
+<section>
+  <h2>The decision tape</h2>
+  <p class="lede">
+    Live traces from held-out payments, largest first. Every line is what the
+    agent saw and what it chose to do about it.
+  </p>
+  <div class="filters" id="filters"></div>
+  <div class="tapes" id="tapes"></div>
+</section>
+
+<footer id="footer"></footer>
+</div>
+
+<script id="payload" type="application/json">{
+  "generated_at": "2026-08-23 20:35:18",
+  "runtime_s": 400.2,
+  "world": {
+    "payments": 32000,
+    "outage_windows": 285,
+    "outages_detected": 270,
+    "train_payments": 24000,
+    "test_payments": 8000
+  },
+  "model": {
+    "n_train": 71763,
+    "n_test": 17941,
+    "auc": 0.7475,
+    "brier": 0.1387,
+    "base_rate": 0.2014
+  },
+  "agent": {
+    "label": "+ suppression (full agent)",
+    "payments": 8000,
+    "exposed_value": 12008216.33,
+    "recovered_count": 5447,
+    "recovered_value": 7913489.85,
+    "recovery_rate": 0.6809,
+    "value_rate": 0.659,
+    "attempts": 14763,
+    "attempts_per_payment": 1.845,
+    "cost": 27720.1,
+    "net": 7885769.75,
+    "risk_retries": 0,
+    "by_cause": {
+      "auth_friction": {
+        "n": 1097,
+        "recovered": 801,
+        "rate": 0.7302,
+        "value": 1779403.87
+      },
+      "bank_downtime": {
+        "n": 1628,
+        "recovered": 1349,
+        "rate": 0.8286,
+        "value": 1976488.02
+      },
+      "instrument_dead": {
+        "n": 690,
+        "recovered": 392,
+        "rate": 0.5681,
+        "value": 611416.95
+      },
+      "limit_exceeded": {
+        "n": 398,
+        "recovered": 310,
+        "rate": 0.7789,
+        "value": 389486.35
+      },
+      "risk_block": {
+        "n": 254,
+        "recovered": 0,
+        "rate": 0.0,
+        "value": 0.0
+      },
+      "soft_funds": {
+        "n": 1664,
+        "recovered": 975,
+        "rate": 0.5859,
+        "value": 1199395.85
+      },
+      "technical": {
+        "n": 921,
+        "recovered": 780,
+        "rate": 0.8469,
+        "value": 1155860.01
+      },
+      "user_abandon": {
+        "n": 1348,
+        "recovered": 840,
+        "rate": 0.6231,
+        "value": 801438.8
+      }
+    }
+  },
+  "baseline": {
+    "label": "Fixed schedule (+1h/+24h/+72h)",
+    "payments": 8000,
+    "exposed_value": 12008216.33,
+    "recovered_count": 2596,
+    "recovered_value": 3530212.78,
+    "recovery_rate": 0.3245,
+    "value_rate": 0.294,
+    "attempts": 20291,
+    "attempts_per_payment": 2.536,
+    "cost": 475320.1,
+    "net": 3054892.68,
+    "risk_retries": 755,
+    "by_cause": {
+      "auth_friction": {
+        "n": 1097,
+        "recovered": 326,
+        "rate": 0.2972,
+        "value": 680888.93
+      },
+      "bank_downtime": {
+        "n": 1628,
+        "recovered": 993,
+        "rate": 0.61,
+        "value": 1358465.43
+      },
+      "instrument_dead": {
+        "n": 690,
+        "recovered": 68,
+        "rate": 0.0986,
+        "value": 95964.54
+      },
+      "limit_exceeded": {
+        "n": 398,
+        "recovered": 232,
+        "rate": 0.5829,
+        "value": 299829.69
+      },
+      "risk_block": {
+        "n": 254,
+        "recovered": 9,
+        "rate": 0.0354,
+        "value": 34724.54
+      },
+      "soft_funds": {
+        "n": 1664,
+        "recovered": 57,
+        "rate": 0.0343,
+        "value": 71270.92
+      },
+      "technical": {
+        "n": 921,
+        "recovered": 463,
+        "rate": 0.5027,
+        "value": 603756.67
+      },
+      "user_abandon": {
+        "n": 1348,
+        "recovered": 448,
+        "rate": 0.3323,
+        "value": 385312.06
+      }
+    }
+  },
+  "ablation": [
+    {
+      "label": "Learned timing only",
+      "payments": 8000,
+      "exposed_value": 12008216.33,
+      "recovered_count": 3465,
+      "recovered_value": 4774439.69,
+      "recovery_rate": 0.4331,
+      "value_rate": 0.3976,
+      "attempts": 18567,
+      "attempts_per_payment": 2.321,
+      "cost": 477023.7,
+      "net": 4297415.99,
+      "risk_retries": 761,
+      "by_cause": {
+        "auth_friction": {
+          "n": 1097,
+          "recovered": 355,
+          "rate": 0.3236,
+          "value": 736784.88
+        },
+        "bank_downtime": {
+          "n": 1628,
+          "recovered": 1335,
+          "rate": 0.82,
+          "value": 1942023.05
+        },
+        "instrument_dead": {
+          "n": 690,
+          "recovered": 58,
+          "rate": 0.0841,
+          "value": 58864.04
+        },
+        "limit_exceeded": {
+          "n": 398,
+          "recovered": 305,
+          "rate": 0.7663,
+          "value": 417508.74
+        },
+        "risk_block": {
+          "n": 254,
+          "recovered": 5,
+          "rate": 0.0197,
+          "value": 2035.2
+        },
+        "soft_funds": {
+          "n": 1664,
+          "recovered": 70,
+          "rate": 0.0421,
+          "value": 68946.11
+        },
+        "technical": {
+          "n": 921,
+          "recovered": 703,
+          "rate": 0.7633,
+          "value": 974713.23
+        },
+        "user_abandon": {
+          "n": 1348,
+          "recovered": 634,
+          "rate": 0.4703,
+          "value": 573564.44
+        }
+      },
+      "vs_baseline": {
+        "recovery_rate_lift_pp": 10.86,
+        "recovery_rate_lift_rel": 33.5,
+        "extra_value_recovered": 1244226.91,
+        "value_lift_rel": 35.2,
+        "attempts_saved": 1724,
+        "attempts_saved_pct": 8.5,
+        "risk_retries_avoided": -6,
+        "net_lift": 1242523.31
+      }
+    },
+    {
+      "label": "+ rail switching",
+      "payments": 8000,
+      "exposed_value": 12008216.33,
+      "recovered_count": 4522,
+      "recovered_value": 6556133.34,
+      "recovery_rate": 0.5653,
+      "value_rate": 0.546,
+      "attempts": 17020,
+      "attempts_per_payment": 2.127,
+      "cost": 469922.0,
+      "net": 6086211.34,
+      "risk_retries": 752,
+      "by_cause": {
+        "auth_friction": {
+          "n": 1097,
+          "recovered": 637,
+          "rate": 0.5807,
+          "value": 1351952.79
+        },
+        "bank_downtime": {
+          "n": 1628,
+          "recovered": 1316,
+          "rate": 0.8084,
+          "value": 1848971.11
+        },
+        "instrument_dead": {
+          "n": 690,
+          "recovered": 286,
+          "rate": 0.4145,
+          "value": 458171.87
+        },
+        "limit_exceeded": {
+          "n": 398,
+          "recovered": 312,
+          "rate": 0.7839,
+          "value": 427627.11
+        },
+        "risk_block": {
+          "n": 254,
+          "recovered": 9,
+          "rate": 0.0354,
+          "value": 20933.01
+        },
+        "soft_funds": {
+          "n": 1664,
+          "recovered": 644,
+          "rate": 0.387,
+          "value": 884077.1
+        },
+        "technical": {
+          "n": 921,
+          "recovered": 717,
+          "rate": 0.7785,
+          "value": 1012123.64
+        },
+        "user_abandon": {
+          "n": 1348,
+          "recovered": 601,
+          "rate": 0.4458,
+          "value": 552276.71
+        }
+      },
+      "vs_baseline": {
+        "recovery_rate_lift_pp": 24.08,
+        "recovery_rate_lift_rel": 74.2,
+        "extra_value_recovered": 3025920.56,
+        "value_lift_rel": 85.7,
+        "attempts_saved": 3271,
+        "attempts_saved_pct": 16.1,
+        "risk_retries_avoided": 3,
+        "net_lift": 3031318.66
+      }
+    },
+    {
+      "label": "+ nudges",
+      "payments": 8000,
+      "exposed_value": 12008216.33,
+      "recovered_count": 5453,
+      "recovered_value": 7910592.04,
+      "recovery_rate": 0.6816,
+      "value_rate": 0.6588,
+      "attempts": 15364,
+      "attempts_per_payment": 1.921,
+      "cost": 482380.04,
+      "net": 7428212.0,
+      "risk_retries": 756,
+      "by_cause": {
+        "auth_friction": {
+          "n": 1097,
+          "recovered": 801,
+          "rate": 0.7302,
+          "value": 1788546.15
+        },
+        "bank_downtime": {
+          "n": 1628,
+          "recovered": 1351,
+          "rate": 0.8299,
+          "value": 2052480.94
+        },
+        "instrument_dead": {
+          "n": 690,
+          "recovered": 390,
+          "rate": 0.5652,
+          "value": 540432.94
+        },
+        "limit_exceeded": {
+          "n": 398,
+          "recovered": 310,
+          "rate": 0.7789,
+          "value": 435580.42
+        },
+        "risk_block": {
+          "n": 254,
+          "recovered": 8,
+          "rate": 0.0315,
+          "value": 16260.65
+        },
+        "soft_funds": {
+          "n": 1664,
+          "recovered": 949,
+          "rate": 0.5703,
+          "value": 1113868.68
+        },
+        "technical": {
+          "n": 921,
+          "recovered": 779,
+          "rate": 0.8458,
+          "value": 1120126.53
+        },
+        "user_abandon": {
+          "n": 1348,
+          "recovered": 865,
+          "rate": 0.6417,
+          "value": 843295.73
+        }
+      },
+      "vs_baseline": {
+        "recovery_rate_lift_pp": 35.71,
+        "recovery_rate_lift_rel": 110.1,
+        "extra_value_recovered": 4380379.26,
+        "value_lift_rel": 124.1,
+        "attempts_saved": 4927,
+        "attempts_saved_pct": 24.3,
+        "risk_retries_avoided": -1,
+        "net_lift": 4373319.32
+      }
+    },
+    {
+      "label": "+ suppression (full agent)",
+      "payments": 8000,
+      "exposed_value": 12008216.33,
+      "recovered_count": 5447,
+      "recovered_value": 7913489.85,
+      "recovery_rate": 0.6809,
+      "value_rate": 0.659,
+      "attempts": 14763,
+      "attempts_per_payment": 1.845,
+      "cost": 27720.1,
+      "net": 7885769.75,
+      "risk_retries": 0,
+      "by_cause": {
+        "auth_friction": {
+          "n": 1097,
+          "recovered": 801,
+          "rate": 0.7302,
+          "value": 1779403.87
+        },
+        "bank_downtime": {
+          "n": 1628,
+          "recovered": 1349,
+          "rate": 0.8286,
+          "value": 1976488.02
+        },
+        "instrument_dead": {
+          "n": 690,
+          "recovered": 392,
+          "rate": 0.5681,
+          "value": 611416.95
+        },
+        "limit_exceeded": {
+          "n": 398,
+          "recovered": 310,
+          "rate": 0.7789,
+          "value": 389486.35
+        },
+        "risk_block": {
+          "n": 254,
+          "recovered": 0,
+          "rate": 0.0,
+          "value": 0.0
+        },
+        "soft_funds": {
+          "n": 1664,
+          "recovered": 975,
+          "rate": 0.5859,
+          "value": 1199395.85
+        },
+        "technical": {
+          "n": 921,
+          "recovered": 780,
+          "rate": 0.8469,
+          "value": 1155860.01
+        },
+        "user_abandon": {
+          "n": 1348,
+          "recovered": 840,
+          "rate": 0.6231,
+          "value": 801438.8
+        }
+      },
+      "vs_baseline": {
+        "recovery_rate_lift_pp": 35.64,
+        "recovery_rate_lift_rel": 109.8,
+        "extra_value_recovered": 4383277.07,
+        "value_lift_rel": 124.2,
+        "attempts_saved": 5528,
+        "attempts_saved_pct": 27.2,
+        "risk_retries_avoided": 755,
+        "net_lift": 4830877.07
+      }
+    }
+  ],
+  "delta": {
+    "recovery_rate_lift_pp": 35.64,
+    "recovery_rate_lift_rel": 109.8,
+    "extra_value_recovered": 4383277.07,
+    "value_lift_rel": 124.2,
+    "attempts_saved": 5528,
+    "attempts_saved_pct": 27.2,
+    "risk_retries_avoided": 755,
+    "net_lift": 4830877.07
+  },
+  "traces": [
+    {
+      "payment_id": "pay_0018934",
+      "cause": "soft_funds",
+      "cause_blurb": "Customer's account did not have the balance at that moment.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 22075.15,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2918,
+          "ev": 12858.0
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1813,
+          "ev": 7985.88
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 72.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1394,
+          "ev": 6142.61
+        }
+      ],
+      "amount": 44069.32,
+      "method": "netbanking",
+      "bank": "ICICI",
+      "network": "na",
+      "reason": "insufficient_funds",
+      "is_subscription": true,
+      "days_to_payday": 11,
+      "rail_health": 1.044,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your payment of \u20b944,069 to your order didn't go through. We'll try again on in about 12 hours \u2014 no action needed if your balance is topped up by then.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0020607",
+      "cause": "limit_exceeded",
+      "cause_blurb": "Charge exceeded a per-transaction or daily cap.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 29882.09,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3914,
+          "ev": 17012.45
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3163,
+          "ev": 13750.78
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2489,
+          "ev": 10816.45
+        }
+      ],
+      "amount": 43473.29,
+      "method": "netbanking",
+      "bank": "SBI",
+      "network": "na",
+      "reason": "daily_limit_exceeded",
+      "is_subscription": false,
+      "days_to_payday": 15,
+      "rail_health": 1.003,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b943,473 payment to your order went over a bank limit. We'll retry after the limit resets, or you can pay now by UPI: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0008986",
+      "cause": "bank_downtime",
+      "cause_blurb": "Issuer or PSP is failing for everyone, not just this customer.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 24500.38,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.5167,
+          "ev": 16283.44
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.421,
+          "ev": 13267.06
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2047,
+          "ev": 6450.72
+        }
+      ],
+      "amount": 31517.62,
+      "method": "netbanking",
+      "bank": "ICICI",
+      "network": "na",
+      "reason": "issuer_down",
+      "is_subscription": false,
+      "days_to_payday": 28,
+      "rail_health": 0.987,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your bank was briefly unavailable, so your \u20b931,518 payment to your order didn't complete. We're retrying automatically once it's back up.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0025393",
+      "cause": "instrument_dead",
+      "cause_blurb": "This instrument cannot be charged again, ever.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 18061.59,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3603,
+          "ev": 10542.54
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2478,
+          "ev": 7248.99
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2047,
+          "ev": 5989.4
+        }
+      ],
+      "amount": 29264.34,
+      "method": "card",
+      "bank": "CANARA",
+      "network": "amex",
+      "reason": "international_transaction_not_allowed",
+      "is_subscription": true,
+      "days_to_payday": 11,
+      "rail_health": 0.971,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "We couldn't charge your saved card for \u20b929,264 to your order. Add another payment method here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0027014",
+      "cause": "technical",
+      "cause_blurb": "Transient error in the payment path.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 16607.96,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 0.25,
+          "nudge": "email",
+          "p_recover": 0.4815,
+          "ev": 12513.82
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.245,
+          "ev": 6365.99
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.0781,
+          "ev": 2026.84
+        }
+      ],
+      "amount": 25991.11,
+      "method": "netbanking",
+      "bank": "AXIS",
+      "network": "na",
+      "reason": "server_error",
+      "is_subscription": false,
+      "days_to_payday": 10,
+      "rail_health": 0.94,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Something went wrong on our side with your \u20b925,991 payment to your order. We're retrying it automatically.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0018791",
+      "cause": "risk_block",
+      "cause_blurb": "Declined on risk grounds. Retrying is a compliance problem.",
+      "suppressed": true,
+      "suppress_reason": "Declined on risk grounds. Re-presenting would expose the merchant to scheme penalties, so this one is routed to manual review instead.",
+      "expected_value": 0.0,
+      "actions": [],
+      "amount": 25731.86,
+      "method": "card",
+      "bank": "KOTAK",
+      "network": "visa",
+      "reason": "suspected_fraud",
+      "is_subscription": false,
+      "days_to_payday": 21,
+      "rail_health": 0.994,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ]
+    },
+    {
+      "payment_id": "pay_0019052",
+      "cause": "bank_downtime",
+      "cause_blurb": "Issuer or PSP is failing for everyone, not just this customer.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 17563.27,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.5143,
+          "ev": 11592.36
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3975,
+          "ev": 8959.01
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2454,
+          "ev": 5531.79
+        }
+      ],
+      "amount": 22546.01,
+      "method": "netbanking",
+      "bank": "AXIS",
+      "network": "na",
+      "reason": "issuer_down",
+      "is_subscription": false,
+      "days_to_payday": 13,
+      "rail_health": 0.988,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your bank was briefly unavailable, so your \u20b922,546 payment to your order didn't complete. We're retrying automatically once it's back up.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0010911",
+      "cause": "soft_funds",
+      "cause_blurb": "Customer's account did not have the balance at that moment.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 13648.88,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3609,
+          "ev": 7940.21
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2576,
+          "ev": 5668.55
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1998,
+          "ev": 4395.61
+        }
+      ],
+      "amount": 22009.51,
+      "method": "card",
+      "bank": "YES",
+      "network": "mastercard",
+      "reason": "insufficient_funds",
+      "is_subscription": false,
+      "days_to_payday": 7,
+      "rail_health": 1.002,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your payment of \u20b922,010 to your order didn't go through. We'll try again on in a few minutes \u2014 no action needed if your balance is topped up by then.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0026154",
+      "cause": "technical",
+      "cause_blurb": "Transient error in the payment path.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 13534.79,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.5083,
+          "ev": 10531.28
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2295,
+          "ev": 4754.93
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 12.0,
+          "nudge": "sms",
+          "p_recover": 0.0848,
+          "ev": 1756.38
+        }
+      ],
+      "amount": 20723.37,
+      "method": "netbanking",
+      "bank": "SBI",
+      "network": "na",
+      "reason": "server_error",
+      "is_subscription": true,
+      "days_to_payday": 1,
+      "rail_health": 0.995,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Something went wrong on our side with your \u20b920,723 payment to your order. We're retrying it automatically.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0006191",
+      "cause": "technical",
+      "cause_blurb": "Transient error in the payment path.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 13642.24,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.5466,
+          "ev": 10470.24
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2789,
+          "ev": 5342.46
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1198,
+          "ev": 2292.75
+        }
+      ],
+      "amount": 19159.62,
+      "method": "netbanking",
+      "bank": "IDFC",
+      "network": "na",
+      "reason": "payment_timed_out",
+      "is_subscription": false,
+      "days_to_payday": 27,
+      "rail_health": 0.986,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Something went wrong on our side with your \u20b919,160 payment to your order. We're retrying it automatically.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0013697",
+      "cause": "user_abandon",
+      "cause_blurb": "The customer walked away before completing.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 8370.37,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.2853,
+          "ev": 5321.74
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.144,
+          "ev": 2685.63
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.0991,
+          "ev": 1846.13
+        }
+      ],
+      "amount": 18657.49,
+      "method": "netbanking",
+      "bank": "PNB",
+      "network": "na",
+      "reason": "customer_cancelled",
+      "is_subscription": false,
+      "days_to_payday": 21,
+      "rail_health": 1.029,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b918,657 payment to your order is still waiting. Finish it here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0015566",
+      "cause": "auth_friction",
+      "cause_blurb": "The customer was there but the auth step broke.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 13337.71,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.419,
+          "ev": 7592.77
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3944,
+          "ev": 7146.35
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.25,
+          "ev": 4528.44
+        }
+      ],
+      "amount": 18124.05,
+      "method": "card",
+      "bank": "IDFC",
+      "network": "amex",
+      "reason": "incorrect_otp",
+      "is_subscription": true,
+      "days_to_payday": 18,
+      "rail_health": 0.973,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "The verification step timed out on your \u20b918,124 payment to your order. Paying by UPI takes about ten seconds: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0015719",
+      "cause": "technical",
+      "cause_blurb": "Transient error in the payment path.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 11612.75,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.5167,
+          "ev": 9028.5
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2298,
+          "ev": 4015.01
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.0991,
+          "ev": 1729.73
+        }
+      ],
+      "amount": 17476.92,
+      "method": "netbanking",
+      "bank": "CANARA",
+      "network": "na",
+      "reason": "payment_timed_out",
+      "is_subscription": false,
+      "days_to_payday": 27,
+      "rail_health": 1.007,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Something went wrong on our side with your \u20b917,477 payment to your order. We're retrying it automatically.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0020678",
+      "cause": "bank_downtime",
+      "cause_blurb": "Issuer or PSP is failing for everyone, not just this customer.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 12323.85,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.4507,
+          "ev": 7558.08
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 12.0,
+          "nudge": "sms",
+          "p_recover": 0.3815,
+          "ev": 6397.82
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2198,
+          "ev": 3684.85
+        }
+      ],
+      "amount": 16772.26,
+      "method": "netbanking",
+      "bank": "HDFC",
+      "network": "na",
+      "reason": "issuer_down",
+      "is_subscription": false,
+      "days_to_payday": 29,
+      "rail_health": 1.03,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your bank was briefly unavailable, so your \u20b916,772 payment to your order didn't complete. We're retrying automatically once it's back up.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0025743",
+      "cause": "auth_friction",
+      "cause_blurb": "The customer was there but the auth step broke.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 12598.28,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.4411,
+          "ev": 7313.78
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.4042,
+          "ev": 6701.2
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2788,
+          "ev": 4622.47
+        }
+      ],
+      "amount": 16584.75,
+      "method": "netbanking",
+      "bank": "AXIS",
+      "network": "na",
+      "reason": "payment_authentication_failed",
+      "is_subscription": false,
+      "days_to_payday": 11,
+      "rail_health": 0.993,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "The verification step timed out on your \u20b916,585 payment to your order. Paying by UPI takes about ten seconds: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0019729",
+      "cause": "technical",
+      "cause_blurb": "Transient error in the payment path.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 11159.06,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.5245,
+          "ev": 8572.21
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2674,
+          "ev": 4369.51
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.0895,
+          "ev": 1461.5
+        }
+      ],
+      "amount": 16347.51,
+      "method": "netbanking",
+      "bank": "AXIS",
+      "network": "na",
+      "reason": "payment_timed_out",
+      "is_subscription": false,
+      "days_to_payday": 10,
+      "rail_health": 1.008,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Something went wrong on our side with your \u20b916,348 payment to your order. We're retrying it automatically.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0004445",
+      "cause": "bank_downtime",
+      "cause_blurb": "Issuer or PSP is failing for everyone, not just this customer.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 13020.66,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.5543,
+          "ev": 8989.36
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.4104,
+          "ev": 6655.01
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.25,
+          "ev": 4052.83
+        }
+      ],
+      "amount": 16221.36,
+      "method": "netbanking",
+      "bank": "IDFC",
+      "network": "na",
+      "reason": "issuer_down",
+      "is_subscription": false,
+      "days_to_payday": 25,
+      "rail_health": 1.021,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your bank was briefly unavailable, so your \u20b916,221 payment to your order didn't complete. We're retrying automatically once it's back up.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0009085",
+      "cause": "bank_downtime",
+      "cause_blurb": "Issuer or PSP is failing for everyone, not just this customer.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 12685.77,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 3.0,
+          "nudge": null,
+          "p_recover": 0.4715,
+          "ev": 7624.81
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 6.0,
+          "nudge": "sms",
+          "p_recover": 0.4438,
+          "ev": 7175.62
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.267,
+          "ev": 4316.29
+        }
+      ],
+      "amount": 16172.91,
+      "method": "netbanking",
+      "bank": "YES",
+      "network": "na",
+      "reason": "issuer_down",
+      "is_subscription": false,
+      "days_to_payday": 24,
+      "rail_health": 0.838,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your bank was briefly unavailable, so your \u20b916,173 payment to your order didn't complete. We're retrying automatically once it's back up.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0026433",
+      "cause": "auth_friction",
+      "cause_blurb": "The customer was there but the auth step broke.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 12139.22,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.4347,
+          "ev": 6926.13
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.4082,
+          "ev": 6504.57
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2881,
+          "ev": 4590.42
+        }
+      ],
+      "amount": 15939.16,
+      "method": "card",
+      "bank": "AXIS",
+      "network": "rupay",
+      "reason": "payment_authentication_failed",
+      "is_subscription": false,
+      "days_to_payday": 24,
+      "rail_health": 1.007,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "The verification step timed out on your \u20b915,939 payment to your order. Paying by UPI takes about ten seconds: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0025992",
+      "cause": "user_abandon",
+      "cause_blurb": "The customer walked away before completing.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 7609.58,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3201,
+          "ev": 5019.62
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1511,
+          "ev": 2368.17
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1084,
+          "ev": 1697.87
+        }
+      ],
+      "amount": 15686.06,
+      "method": "netbanking",
+      "bank": "AXIS",
+      "network": "na",
+      "reason": "customer_cancelled",
+      "is_subscription": false,
+      "days_to_payday": 21,
+      "rail_health": 0.979,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b915,686 payment to your order is still waiting. Finish it here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0010199",
+      "cause": "soft_funds",
+      "cause_blurb": "Customer's account did not have the balance at that moment.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 10478.93,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.4083,
+          "ev": 6396.7
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2832,
+          "ev": 4436.59
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2193,
+          "ev": 3435.09
+        }
+      ],
+      "amount": 15672.52,
+      "method": "card",
+      "bank": "PNB",
+      "network": "mastercard",
+      "reason": "insufficient_funds",
+      "is_subscription": false,
+      "days_to_payday": 23,
+      "rail_health": 0.991,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your payment of \u20b915,673 to your order didn't go through. We'll try again on in a few minutes \u2014 no action needed if your balance is topped up by then.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0009778",
+      "cause": "technical",
+      "cause_blurb": "Transient error in the payment path.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 10262.56,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.5126,
+          "ev": 7775.42
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2695,
+          "ev": 4086.92
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.0917,
+          "ev": 1390.16
+        }
+      ],
+      "amount": 15173.52,
+      "method": "netbanking",
+      "bank": "PNB",
+      "network": "na",
+      "reason": "payment_timed_out",
+      "is_subscription": false,
+      "days_to_payday": 16,
+      "rail_health": 1.042,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Something went wrong on our side with your \u20b915,174 payment to your order. We're retrying it automatically.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0023759",
+      "cause": "bank_downtime",
+      "cause_blurb": "Issuer or PSP is failing for everyone, not just this customer.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 11453.61,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.4684,
+          "ev": 7039.53
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 6.0,
+          "nudge": "email",
+          "p_recover": 0.4048,
+          "ev": 6083.97
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2481,
+          "ev": 3727.96
+        }
+      ],
+      "amount": 15033.84,
+      "method": "netbanking",
+      "bank": "KOTAK",
+      "network": "na",
+      "reason": "issuer_down",
+      "is_subscription": false,
+      "days_to_payday": 21,
+      "rail_health": 1.003,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your bank was briefly unavailable, so your \u20b915,034 payment to your order didn't complete. We're retrying automatically once it's back up.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0023367",
+      "cause": "bank_downtime",
+      "cause_blurb": "Issuer or PSP is failing for everyone, not just this customer.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 11712.8,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.5164,
+          "ev": 7739.52
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3984,
+          "ev": 5970.47
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.249,
+          "ev": 3731.43
+        }
+      ],
+      "amount": 14992.3,
+      "method": "netbanking",
+      "bank": "ICICI",
+      "network": "na",
+      "reason": "issuer_down",
+      "is_subscription": false,
+      "days_to_payday": 16,
+      "rail_health": 0.949,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your bank was briefly unavailable, so your \u20b914,992 payment to your order didn't complete. We're retrying automatically once it's back up.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0008341",
+      "cause": "soft_funds",
+      "cause_blurb": "Customer's account did not have the balance at that moment.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 7951.17,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3341,
+          "ev": 4604.05
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2177,
+          "ev": 3000.32
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.188,
+          "ev": 2589.76
+        }
+      ],
+      "amount": 13787.86,
+      "method": "netbanking",
+      "bank": "IDFC",
+      "network": "na",
+      "reason": "insufficient_funds",
+      "is_subscription": true,
+      "days_to_payday": 29,
+      "rail_health": 0.766,
+      "rail_degraded": true,
+      "expected_recovery_h": 2.38,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your payment of \u20b913,788 to your order didn't go through. We'll try again on in a few minutes \u2014 no action needed if your balance is topped up by then.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0030550",
+      "cause": "technical",
+      "cause_blurb": "Transient error in the payment path.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 8890.23,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.5216,
+          "ev": 6842.21
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2645,
+          "ev": 3468.8
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.0843,
+          "ev": 1103.78
+        }
+      ],
+      "amount": 13122.45,
+      "method": "netbanking",
+      "bank": "KOTAK",
+      "network": "na",
+      "reason": "payment_timed_out",
+      "is_subscription": true,
+      "days_to_payday": 14,
+      "rail_health": 1.007,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Something went wrong on our side with your \u20b913,122 payment to your order. We're retrying it automatically.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0029150",
+      "cause": "soft_funds",
+      "cause_blurb": "Customer's account did not have the balance at that moment.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 7872.23,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3689,
+          "ev": 4822.18
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2285,
+          "ev": 2985.83
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1832,
+          "ev": 2394.26
+        }
+      ],
+      "amount": 13076.44,
+      "method": "card",
+      "bank": "SBI",
+      "network": "amex",
+      "reason": "insufficient_funds",
+      "is_subscription": false,
+      "days_to_payday": 23,
+      "rail_health": 1.02,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your payment of \u20b913,076 to your order didn't go through. We'll try again on in a few minutes \u2014 no action needed if your balance is topped up by then.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0014640",
+      "cause": "auth_friction",
+      "cause_blurb": "The customer was there but the auth step broke.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 8289.42,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3339,
+          "ev": 4317.83
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3017,
+          "ev": 3900.52
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2284,
+          "ev": 2952.85
+        }
+      ],
+      "amount": 12936.64,
+      "method": "netbanking",
+      "bank": "BOB",
+      "network": "na",
+      "reason": "payment_authentication_failed",
+      "is_subscription": false,
+      "days_to_payday": 1,
+      "rail_health": 1.014,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "The verification step timed out on your \u20b912,937 payment to your order. Paying by UPI takes about ten seconds: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0004718",
+      "cause": "auth_friction",
+      "cause_blurb": "The customer was there but the auth step broke.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 9665.89,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.4417,
+          "ev": 5664.76
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3951,
+          "ev": 5066.44
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2708,
+          "ev": 3471.88
+        }
+      ],
+      "amount": 12829.19,
+      "method": "card",
+      "bank": "ICICI",
+      "network": "visa",
+      "reason": "payment_authentication_failed",
+      "is_subscription": false,
+      "days_to_payday": 15,
+      "rail_health": 0.994,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "The verification step timed out on your \u20b912,829 payment to your order. Paying by UPI takes about ten seconds: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0016937",
+      "cause": "auth_friction",
+      "cause_blurb": "The customer was there but the auth step broke.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 9121.15,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3984,
+          "ev": 5030.08
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.361,
+          "ev": 4557.53
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2779,
+          "ev": 3508.99
+        }
+      ],
+      "amount": 12631.68,
+      "method": "netbanking",
+      "bank": "HDFC",
+      "network": "na",
+      "reason": "payment_authentication_failed",
+      "is_subscription": false,
+      "days_to_payday": 26,
+      "rail_health": 1.011,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "The verification step timed out on your \u20b912,632 payment to your order. Paying by UPI takes about ten seconds: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0013279",
+      "cause": "soft_funds",
+      "cause_blurb": "Customer's account did not have the balance at that moment.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 6691.63,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3275,
+          "ev": 4028.34
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2244,
+          "ev": 2759.95
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 72.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1259,
+          "ev": 1547.54
+        }
+      ],
+      "amount": 12306.86,
+      "method": "netbanking",
+      "bank": "SBI",
+      "network": "na",
+      "reason": "insufficient_funds",
+      "is_subscription": false,
+      "days_to_payday": 10,
+      "rail_health": 1.023,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your payment of \u20b912,307 to your order didn't go through. We'll try again on in about 6 hours \u2014 no action needed if your balance is topped up by then.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0021111",
+      "cause": "auth_friction",
+      "cause_blurb": "The customer was there but the auth step broke.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 9971.72,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.4819,
+          "ev": 5906.47
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.4646,
+          "ev": 5693.37
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3282,
+          "ev": 4022.26
+        }
+      ],
+      "amount": 12259.66,
+      "method": "card",
+      "bank": "PNB",
+      "network": "rupay",
+      "reason": "otp_attempts_exceeded",
+      "is_subscription": true,
+      "days_to_payday": 13,
+      "rail_health": 0.985,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "The verification step timed out on your \u20b912,260 payment to your order. Paying by UPI takes about ten seconds: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0006503",
+      "cause": "soft_funds",
+      "cause_blurb": "Customer's account did not have the balance at that moment.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 7675.1,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3984,
+          "ev": 4777.85
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2599,
+          "ev": 3115.55
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1917,
+          "ev": 2297.92
+        }
+      ],
+      "amount": 11996.05,
+      "method": "card",
+      "bank": "HDFC",
+      "network": "rupay",
+      "reason": "insufficient_funds",
+      "is_subscription": true,
+      "days_to_payday": 27,
+      "rail_health": 0.987,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your payment of \u20b911,996 to your order didn't go through. We'll try again on in about 1 hours \u2014 no action needed if your balance is topped up by then.",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0028669",
+      "cause": "user_abandon",
+      "cause_blurb": "The customer walked away before completing.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 6361.21,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3655,
+          "ev": 4269.86
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1832,
+          "ev": 2139.95
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1212,
+          "ev": 1415.29
+        }
+      ],
+      "amount": 11688.59,
+      "method": "netbanking",
+      "bank": "ICICI",
+      "network": "na",
+      "reason": "customer_cancelled",
+      "is_subscription": false,
+      "days_to_payday": 27,
+      "rail_health": 0.997,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b911,689 payment to your order is still waiting. Finish it here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0024313",
+      "cause": "user_abandon",
+      "cause_blurb": "The customer walked away before completing.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 5291.51,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3049,
+          "ev": 3493.27
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1484,
+          "ev": 1699.17
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.0911,
+          "ev": 1042.38
+        }
+      ],
+      "amount": 11464.95,
+      "method": "netbanking",
+      "bank": "IDFC",
+      "network": "na",
+      "reason": "customer_cancelled",
+      "is_subscription": false,
+      "days_to_payday": 2,
+      "rail_health": 1.06,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b911,465 payment to your order is still waiting. Finish it here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0011992",
+      "cause": "instrument_dead",
+      "cause_blurb": "This instrument cannot be charged again, ever.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 7234.81,
+      "actions": [
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.394,
+          "ev": 4487.61
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2554,
+          "ev": 2908.14
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1917,
+          "ev": 2182.64
+        }
+      ],
+      "amount": 11394.76,
+      "method": "card",
+      "bank": "BOB",
+      "network": "rupay",
+      "reason": "card_expired",
+      "is_subscription": true,
+      "days_to_payday": 27,
+      "rail_health": 1.004,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "We couldn't charge your saved card for \u20b911,395 to your order. Add another payment method here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0010500",
+      "cause": "limit_exceeded",
+      "cause_blurb": "Charge exceeded a per-transaction or daily cap.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 7506.61,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3797,
+          "ev": 4228.05
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3126,
+          "ev": 3480.4
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2359,
+          "ev": 2625.96
+        }
+      ],
+      "amount": 11140.18,
+      "method": "netbanking",
+      "bank": "PNB",
+      "network": "na",
+      "reason": "daily_limit_exceeded",
+      "is_subscription": false,
+      "days_to_payday": 17,
+      "rail_health": 1.051,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b911,140 payment to your order went over a bank limit. We'll retry after the limit resets, or you can pay now by UPI: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0019216",
+      "cause": "risk_block",
+      "cause_blurb": "Declined on risk grounds. Retrying is a compliance problem.",
+      "suppressed": true,
+      "suppress_reason": "Declined on risk grounds. Re-presenting would expose the merchant to scheme penalties, so this one is routed to manual review instead.",
+      "expected_value": 0.0,
+      "actions": [],
+      "amount": 10961.12,
+      "method": "card",
+      "bank": "HDFC",
+      "network": "rupay",
+      "reason": "payment_declined_by_risk",
+      "is_subscription": false,
+      "days_to_payday": 12,
+      "rail_health": 1.017,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ]
+    },
+    {
+      "payment_id": "pay_0022400",
+      "cause": "user_abandon",
+      "cause_blurb": "The customer walked away before completing.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 5560.51,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3533,
+          "ev": 3698.14
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1974,
+          "ev": 2065.89
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.097,
+          "ev": 1013.92
+        }
+      ],
+      "amount": 10474.08,
+      "method": "netbanking",
+      "bank": "ICICI",
+      "network": "na",
+      "reason": "customer_cancelled",
+      "is_subscription": true,
+      "days_to_payday": 13,
+      "rail_health": 1.022,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b910,474 payment to your order is still waiting. Finish it here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0026771",
+      "cause": "user_abandon",
+      "cause_blurb": "The customer walked away before completing.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 6274.73,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.4263,
+          "ev": 4437.37
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2116,
+          "ev": 2201.63
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1221,
+          "ev": 1269.78
+        }
+      ],
+      "amount": 10413.33,
+      "method": "netbanking",
+      "bank": "ICICI",
+      "network": "na",
+      "reason": "customer_cancelled",
+      "is_subscription": true,
+      "days_to_payday": 21,
+      "rail_health": 1.002,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b910,413 payment to your order is still waiting. Finish it here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0002742",
+      "cause": "risk_block",
+      "cause_blurb": "Declined on risk grounds. Retrying is a compliance problem.",
+      "suppressed": true,
+      "suppress_reason": "Declined on risk grounds. Re-presenting would expose the merchant to scheme penalties, so this one is routed to manual review instead.",
+      "expected_value": 0.0,
+      "actions": [],
+      "amount": 10278.39,
+      "method": "card",
+      "bank": "ICICI",
+      "network": "rupay",
+      "reason": "payment_declined_by_risk",
+      "is_subscription": false,
+      "days_to_payday": 3,
+      "rail_health": 0.976,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ]
+    },
+    {
+      "payment_id": "pay_0019668",
+      "cause": "instrument_dead",
+      "cause_blurb": "This instrument cannot be charged again, ever.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 6380.19,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 3.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3951,
+          "ev": 3887.41
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2568,
+          "ev": 2526.12
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2182,
+          "ev": 2146.21
+        }
+      ],
+      "amount": 9843.46,
+      "method": "netbanking",
+      "bank": "KOTAK",
+      "network": "na",
+      "reason": "account_closed",
+      "is_subscription": true,
+      "days_to_payday": 15,
+      "rail_health": 1.002,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "We couldn't charge your saved card for \u20b99,843 to your order. Add another payment method here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0015654",
+      "cause": "risk_block",
+      "cause_blurb": "Declined on risk grounds. Retrying is a compliance problem.",
+      "suppressed": true,
+      "suppress_reason": "Declined on risk grounds. Re-presenting would expose the merchant to scheme penalties, so this one is routed to manual review instead.",
+      "expected_value": 0.0,
+      "actions": [],
+      "amount": 9815.77,
+      "method": "card",
+      "bank": "PNB",
+      "network": "visa",
+      "reason": "payment_declined_by_risk",
+      "is_subscription": false,
+      "days_to_payday": 25,
+      "rail_health": 1.021,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ]
+    },
+    {
+      "payment_id": "pay_0007990",
+      "cause": "limit_exceeded",
+      "cause_blurb": "Charge exceeded a per-transaction or daily cap.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 6278.68,
+      "actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.3771,
+          "ev": 3671.61
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 48.0,
+          "nudge": "email",
+          "p_recover": 0.2684,
+          "ev": 2613.55
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2207,
+          "ev": 2148.48
+        }
+      ],
+      "amount": 9741.61,
+      "method": "netbanking",
+      "bank": "YES",
+      "network": "na",
+      "reason": "daily_limit_exceeded",
+      "is_subscription": false,
+      "days_to_payday": 26,
+      "rail_health": 0.976,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b99,742 payment to your order went over a bank limit. We'll retry after the limit resets, or you can pay now by UPI: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0012641",
+      "cause": "risk_block",
+      "cause_blurb": "Declined on risk grounds. Retrying is a compliance problem.",
+      "suppressed": true,
+      "suppress_reason": "Declined on risk grounds. Re-presenting would expose the merchant to scheme penalties, so this one is routed to manual review instead.",
+      "expected_value": 0.0,
+      "actions": [],
+      "amount": 9682.53,
+      "method": "card",
+      "bank": "HDFC",
+      "network": "visa",
+      "reason": "payment_declined_by_risk",
+      "is_subscription": true,
+      "days_to_payday": 28,
+      "rail_health": 1.009,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ]
+    },
+    {
+      "payment_id": "pay_0002225",
+      "cause": "instrument_dead",
+      "cause_blurb": "This instrument cannot be charged again, ever.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 5966.62,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3771,
+          "ev": 3587.5
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2652,
+          "ev": 2522.44
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1857,
+          "ev": 1765.54
+        }
+      ],
+      "amount": 9517.46,
+      "method": "card",
+      "bank": "BOB",
+      "network": "mastercard",
+      "reason": "card_expired",
+      "is_subscription": false,
+      "days_to_payday": 16,
+      "rail_health": 1.032,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "We couldn't charge your saved card for \u20b99,517 to your order. Add another payment method here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0022098",
+      "cause": "instrument_dead",
+      "cause_blurb": "This instrument cannot be charged again, ever.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 5614.68,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.377,
+          "ev": 3452.64
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 6.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.2373,
+          "ev": 2172.13
+        },
+        {
+          "play": "request_instrument",
+          "play_label": "Ask for a fresh payment method",
+          "delay_h": 48.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.186,
+          "ev": 1702.19
+        }
+      ],
+      "amount": 9163.03,
+      "method": "card",
+      "bank": "PNB",
+      "network": "rupay",
+      "reason": "card_blocked",
+      "is_subscription": false,
+      "days_to_payday": 3,
+      "rail_health": 1.013,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "We couldn't charge your saved card for \u20b99,163 to your order. Add another payment method here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    },
+    {
+      "payment_id": "pay_0003421",
+      "cause": "user_abandon",
+      "cause_blurb": "The customer walked away before completing.",
+      "suppressed": false,
+      "suppress_reason": "",
+      "expected_value": 4358.72,
+      "actions": [
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 0.25,
+          "nudge": "whatsapp",
+          "p_recover": 0.3049,
+          "ev": 2788.28
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 1.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1511,
+          "ev": 1380.96
+        },
+        {
+          "play": "switch_rail",
+          "play_label": "Move the customer to UPI instead",
+          "delay_h": 12.0,
+          "nudge": "whatsapp",
+          "p_recover": 0.1132,
+          "ev": 1034.52
+        }
+      ],
+      "amount": 9152.48,
+      "method": "netbanking",
+      "bank": "KOTAK",
+      "network": "na",
+      "reason": "customer_cancelled",
+      "is_subscription": false,
+      "days_to_payday": 16,
+      "rail_health": 1.009,
+      "rail_degraded": false,
+      "expected_recovery_h": 0.0,
+      "baseline_actions": [
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 1.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 24.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        },
+        {
+          "play": "retry",
+          "play_label": "Re-present the same instrument at a better moment",
+          "delay_h": 72.0,
+          "nudge": null,
+          "p_recover": 0.0,
+          "ev": 0.0
+        }
+      ],
+      "nudge_copy": "Your \u20b99,152 payment to your order is still waiting. Finish it here: rzp.io/r/xxxx",
+      "nudge_source": "offline"
+    }
+  ],
+  "cause_blurbs": {
+    "bank_downtime": "Issuer or PSP is failing for everyone, not just this customer.",
+    "soft_funds": "Customer's account did not have the balance at that moment.",
+    "auth_friction": "The customer was there but the auth step broke.",
+    "instrument_dead": "This instrument cannot be charged again, ever.",
+    "risk_block": "Declined on risk grounds. Retrying is a compliance problem.",
+    "technical": "Transient error in the payment path.",
+    "limit_exceeded": "Charge exceeded a per-transaction or daily cap.",
+    "user_abandon": "The customer walked away before completing."
+  },
+  "play_blurbs": {
+    "retry": "Re-present the same instrument at a better moment",
+    "switch_rail": "Move the customer to UPI instead",
+    "request_instrument": "Ask for a fresh payment method",
+    "suppress": "Take no further attempt"
+  }
+}</script>
+<script>
+(function(){
+  const raw = document.getElementById('payload').textContent;
+  if (raw.indexOf('__RESULTS') === 0) {
+    document.body.innerHTML =
+      '<div style="font-family:monospace;padding:40px;max-width:60ch">' +
+      'No results baked in. Run:<br><br>' +
+      'python scripts/run_experiment.py<br>python scripts/build_dashboard.py</div>';
+    return;
+  }
+  const D = JSON.parse(raw);
+
+  // ---- formatting -----------------------------------------------------
+  const inr = n => {
+    const a = Math.abs(n);
+    if (a >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+    if (a >= 1e5) return '₹' + (n/1e5).toFixed(2) + ' L';
+    if (a >= 1e3) return '₹' + Math.round(n/1e3) + 'k';
+    return '₹' + Math.round(n);
+  };
+  const rupees = n => '₹' + Math.round(n).toLocaleString('en-IN');
+  const pct = n => (100*n).toFixed(1) + '%';
+  const title = s => s.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+  const hrs = h => h < 1 ? Math.round(h*60) + ' min' : (h < 24 ? h + ' h' : (h/24) + ' d');
+  const el = (tag, cls, html) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  };
+
+  const A = D.agent, B = D.baseline, X = D.delta;
+
+  // ---- masthead meta --------------------------------------------------
+  document.getElementById('meta').innerHTML = [
+    ['Held-out payments', D.world.test_payments.toLocaleString('en-IN')],
+    ['Logged attempts trained on', D.model.n_train.toLocaleString('en-IN')],
+    ['Model AUC', D.model.auc.toFixed(3)],
+    ['Brier', D.model.brier.toFixed(3)],
+    ['Outages detected', D.world.outages_detected + ' of ' + D.world.outage_windows]
+  ].map(([k,v]) => k + ' <b>' + v + '</b>').join('');
+
+  // ---- headline figures ----------------------------------------------
+  const figs = [
+    ['+' + X.recovery_rate_lift_pp + 'pp', 'Recovery rate, ' + pct(B.recovery_rate) +
+      ' → ' + pct(A.recovery_rate)],
+    [inr(X.net_lift), 'Extra net revenue on ' + D.world.test_payments.toLocaleString('en-IN') +
+      ' failed payments'],
+    [X.attempts_saved_pct + '%', 'Fewer attempts against the customer and the card networks'],
+    [X.risk_retries_avoided.toLocaleString('en-IN'), 'Risk-declined payments the fixed schedule ' +
+      're-presented, and Recover did not']
+  ];
+  document.getElementById('figures').innerHTML = figs.map(([n,l]) =>
+    '<div class="fig"><span class="n up">' + n + '</span><span class="l">' + l + '</span></div>'
+  ).join('');
+
+  // ---- ablation ladder ------------------------------------------------
+  const ladder = document.getElementById('ladder');
+  const rungs = [{label: B.label, net: B.net, base: true}]
+    .concat(D.ablation.map(r => ({label: r.label, net: r.net, attempts: r.attempts})));
+  const maxNet = Math.max.apply(null, rungs.map(r => r.net)) * 1.06;
+
+  rungs.forEach(r => {
+    const row = el('div', 'rung' + (r.base ? ' base' : ''));
+    row.appendChild(el('div','name', r.label +
+      (r.base ? '<span>what runs today</span>' : '')));
+    const track = el('div','track');
+    const bar = el('div','bar');
+    track.appendChild(bar);
+    if (!r.base) {
+      const m = el('div','marker');
+      m.style.left = (100*B.net/maxNet) + '%';
+      track.appendChild(m);
+    }
+    row.appendChild(track);
+    row.appendChild(el('div','v', inr(r.net)));
+    ladder.appendChild(row);
+    requestAnimationFrame(() => { bar.style.width = (100*r.net/maxNet) + '%'; });
+  });
+
+  // ---- scorecard ------------------------------------------------------
+  const rows = [
+    ['Payments recovered', B.recovered_count.toLocaleString('en-IN'),
+      A.recovered_count.toLocaleString('en-IN'), 'good'],
+    ['Recovery rate', pct(B.recovery_rate), pct(A.recovery_rate), 'good'],
+    ['Gross recovered', rupees(B.recovered_value), rupees(A.recovered_value), 'good'],
+    ['Attempts used', B.attempts.toLocaleString('en-IN'), A.attempts.toLocaleString('en-IN'), 'good'],
+    ['Attempts per payment', B.attempts_per_payment, A.attempts_per_payment, 'good'],
+    ['Attempt + message cost', rupees(B.cost), rupees(A.cost), 'good'],
+    ['Risk declines re-presented', B.risk_retries.toLocaleString('en-IN'),
+      A.risk_retries.toLocaleString('en-IN'), 'good']
+  ];
+  let html = '<tr><th>Metric</th><th>Fixed schedule</th><th>Recover</th></tr>';
+  rows.forEach(([k,b,a,cls]) => {
+    html += '<tr><td>' + k + '</td><td class="num">' + b +
+            '</td><td class="num ' + cls + '">' + a + '</td></tr>';
+  });
+  html += '<tr class="total"><td>Net revenue recovered</td><td class="num">' +
+          rupees(B.net) + '</td><td class="num good">' + rupees(A.net) + '</td></tr>';
+  document.getElementById('scorecard').innerHTML = html;
+
+  // ---- by cause -------------------------------------------------------
+  const causes = document.getElementById('causes');
+  const keys = Object.keys(A.by_cause).sort((x,y) => A.by_cause[y].n - A.by_cause[x].n);
+  keys.forEach(k => {
+    const a = A.by_cause[k], b = B.by_cause[k] || {rate:0};
+    const c = el('div','cause');
+    c.innerHTML =
+      '<div class="top"><div class="k">' + title(k) +
+        '<small>' + (D.cause_blurbs[k] || '') + '</small></div>' +
+      '<div class="pct">' + pct(b.rate) + ' → <b>' + pct(a.rate) + '</b></div></div>' +
+      '<div class="duo"><i class="a"></i><i></i></div>';
+    causes.appendChild(c);
+    const bars = c.querySelectorAll('.duo i');
+    requestAnimationFrame(() => {
+      bars[0].style.width = (100*a.rate) + '%';
+      bars[1].style.width = (100*b.rate) + '%';
+    });
+  });
+
+  // ---- decision tape --------------------------------------------------
+  const tapes = document.getElementById('tapes');
+  const present = Array.from(new Set(D.traces.map(t => t.cause)));
+
+  function render(filter){
+    tapes.innerHTML = '';
+    D.traces.filter(t => !filter || t.cause === filter).forEach(t => {
+      const card = el('div','tape');
+      let h =
+        '<div class="hd"><div class="amt">' + rupees(t.amount) + '</div>' +
+        '<div class="id">' + t.payment_id + '</div></div>' +
+        row('rail', t.method.toUpperCase() + ' · ' + t.bank +
+            (t.network !== 'na' ? ' · ' + t.network : '')) +
+        row('gateway said', t.reason) +
+        row('classified as', title(t.cause)) +
+        row('rail health', (100*t.rail_health).toFixed(0) + '%' +
+            (t.rail_degraded ? ' · degraded, back in ~' + t.expected_recovery_h + 'h' : ' · normal'));
+
+      if (t.cause === 'soft_funds') h += row('payday in', t.days_to_payday + ' days');
+      if (t.is_subscription) h += row('type', 'subscription');
+
+      h += '<div class="why">' + t.cause_blurb + '</div>';
+
+      if (t.suppressed) {
+        h += '<div class="stamp">No attempt</div>' +
+             '<div style="color:var(--muted);font-family:var(--body);font-size:13px">' +
+             t.suppress_reason + '</div>';
+      } else {
+        t.actions.forEach((a,i) => {
+          h += '<div class="step"><span class="n">' + (i+1) + '.</span><span>' +
+               '<span class="b">' + a.play_label + '</span> — ' + hrs(a.delay_h) +
+               ' after failure' + (a.nudge ? ', ' + a.nudge : '') +
+               '<br><span class="d">p(recover) ' + (100*a.p_recover).toFixed(1) +
+               '% · expected ' + rupees(a.ev) + '</span></span></div>';
+        });
+        h += '<div class="row" style="border-top:1px dashed var(--rule);margin-top:8px;padding-top:8px">' +
+             '<span>plan value</span><span><b>' + rupees(t.expected_value) + '</b></span></div>';
+      }
+
+      if (t.nudge_copy) {
+        h += '<div class="msg"><b>' + (t.nudge_source === 'claude' ?
+             'Message written by Claude' : 'Message') + '</b>' + t.nudge_copy + '</div>';
+      }
+
+      const bl = t.baseline_actions.map(a => hrs(a.delay_h)).join(' → ');
+      h += '<div class="versus">Fixed schedule would have: <b>' +
+           (t.cause === 'risk_block' ? 're-presented a fraud decline three times'
+            : 'retried the same ' + t.method + ' at ' + bl) + '</b></div>';
+
+      card.innerHTML = h;
+      tapes.appendChild(card);
+    });
+  }
+  function row(k,v){ return '<div class="row"><span>' + k + '</span><span>' + v + '</span></div>'; }
+
+  const fb = document.getElementById('filters');
+  [['All', null]].concat(present.map(c => [title(c), c])).forEach(([label, val], i) => {
+    const b = el('button', null, label);
+    b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    b.onclick = () => {
+      fb.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      render(val);
+    };
+    fb.appendChild(b);
+  });
+  render(null);
+
+  document.getElementById('footer').innerHTML =
+    'Generated ' + D.generated_at + ' · full run in ' + D.runtime_s + 's · ' +
+    D.world.payments.toLocaleString('en-IN') + ' simulated failed payments, ' +
+    D.world.train_payments.toLocaleString('en-IN') + ' used for training, ' +
+    D.world.test_payments.toLocaleString('en-IN') + ' held out.<br>' +
+    'Payment outcomes come from a ground-truth simulator the agent cannot read. ' +
+    'The model learns only from logged attempts, exactly as it would from ' +
+    'production retry logs.';
+})();
+</script>

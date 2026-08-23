@@ -1,0 +1,451 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recover — failed payment recovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper:#eef2f7;
+    --card:#ffffff;
+    --ink:#0b1b2b;
+    --muted:#5c7189;
+    --rule:#d6dfe9;
+    --recovered:#0e7c6b;
+    --lost:#b4443a;
+    --signal:#1b4dff;
+    --tape:#fbfaf7;
+    --display:"Fraunces",Georgia,serif;
+    --body:"Archivo",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:16px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px 96px}
+  a{color:var(--signal)}
+
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 10px;
+  }
+
+  /* ---- masthead ---- */
+  header{padding:72px 0 40px;border-bottom:1px solid var(--rule)}
+  h1{
+    font-family:var(--display);font-weight:700;
+    font-size:clamp(40px,7vw,74px);line-height:.98;letter-spacing:-.025em;
+    margin:0 0 18px;
+  }
+  h1 em{font-style:italic;color:var(--recovered)}
+  .standfirst{
+    max-width:60ch;font-size:clamp(16px,2.1vw,19px);color:#31465c;margin:0;
+  }
+  .meta{
+    margin-top:26px;display:flex;flex-wrap:wrap;gap:8px 26px;
+    font-family:var(--mono);font-size:12px;color:var(--muted);
+  }
+  .meta b{color:var(--ink);font-weight:600}
+
+  /* ---- headline figures ---- */
+  .figures{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:1px;background:var(--rule);border:1px solid var(--rule);
+    margin:44px 0 0;
+  }
+  .fig{background:var(--card);padding:22px 20px}
+  .fig .n{
+    font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,42px);
+    line-height:1;letter-spacing:-.02em;display:block;
+  }
+  .fig .n.up{color:var(--recovered)}
+  .fig .l{display:block;margin-top:9px;font-size:13px;color:var(--muted);max-width:24ch}
+
+  section{padding:56px 0 0}
+  h2{
+    font-family:var(--display);font-weight:700;font-size:clamp(24px,3.4vw,32px);
+    letter-spacing:-.02em;margin:0 0 8px;
+  }
+  .lede{color:var(--muted);max-width:64ch;margin:0 0 28px;font-size:15px}
+
+  /* ---- ablation ladder (the thesis) ---- */
+  .ladder{border-top:1px solid var(--rule)}
+  .rung{
+    display:grid;grid-template-columns:210px 1fr 118px;gap:16px;align-items:center;
+    padding:15px 0;border-bottom:1px solid var(--rule);
+  }
+  .rung .name{font-size:14px;font-weight:500}
+  .rung .name span{display:block;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .track{position:relative;height:26px;background:#e4ebf3}
+  .bar{
+    height:100%;background:var(--recovered);width:0;
+    transition:width .9s cubic-bezier(.22,1,.36,1);
+  }
+  .rung:nth-child(2) .bar{transition-delay:.05s}
+  .rung:nth-child(3) .bar{transition-delay:.15s}
+  .rung:nth-child(4) .bar{transition-delay:.25s}
+  .rung:nth-child(5) .bar{transition-delay:.35s}
+  .rung.base .bar{background:#8fa3b8}
+  .marker{
+    position:absolute;top:-7px;bottom:-7px;width:0;border-left:2px dashed var(--lost);
+  }
+  .marker b{
+    position:absolute;top:-19px;left:6px;font-family:var(--mono);
+    font-size:10px;letter-spacing:.08em;color:var(--lost);white-space:nowrap;
+  }
+  .rung .v{font-family:var(--mono);font-size:14px;text-align:right;font-weight:500}
+
+  /* ---- scorecard ---- */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:right;padding:11px 10px;border-bottom:1px solid var(--rule)}
+  th:first-child,td:first-child{text-align:left;padding-left:0}
+  th{
+    font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);font-weight:500;
+  }
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  td.good{color:var(--recovered);font-weight:600}
+  td.bad{color:var(--lost);font-weight:600}
+  tr.total td{border-top:2px solid var(--ink);font-weight:600}
+
+  .split{display:grid;grid-template-columns:1fr;gap:36px}
+  @media(min-width:860px){.split{grid-template-columns:1fr 1fr;gap:48px}}
+
+  /* ---- cause bars ---- */
+  .cause{padding:11px 0;border-bottom:1px solid var(--rule)}
+  .cause .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .cause .k{font-size:14px;font-weight:500}
+  .cause .k small{display:block;font-weight:400;color:var(--muted);font-size:12px;max-width:44ch}
+  .cause .pct{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .cause .pct b{color:var(--recovered)}
+  .duo{margin-top:9px;display:grid;gap:3px}
+  .duo i{display:block;height:7px;background:#8fa3b8;width:0;transition:width .8s ease}
+  .duo i.a{background:var(--recovered)}
+
+  /* ---- signature: the decision tape ---- */
+  .filters{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 22px}
+  .filters button{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    padding:7px 12px;background:transparent;border:1px solid var(--rule);
+    color:var(--muted);cursor:pointer;border-radius:0;
+  }
+  .filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .filters button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+  .tapes{display:grid;gap:20px;grid-template-columns:1fr}
+  @media(min-width:760px){.tapes{grid-template-columns:1fr 1fr}}
+
+  .tape{
+    background:var(--tape);border:1px solid var(--rule);font-family:var(--mono);
+    font-size:12px;line-height:1.62;padding:18px 18px 0;position:relative;
+  }
+  /* torn receipt edge */
+  .tape::after{
+    content:"";display:block;height:12px;margin:0 -18px;
+    background:
+      radial-gradient(circle at 6px 12px, transparent 6px, var(--tape) 6.5px) repeat-x;
+    background-size:12px 12px;
+  }
+  .tape .hd{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding-bottom:10px;border-bottom:1px dashed var(--rule);
+  }
+  .tape .amt{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:-.01em}
+  .tape .id{color:var(--muted);font-size:11px}
+  .row{display:flex;justify-content:space-between;gap:14px;padding:3px 0}
+  .row span:first-child{color:var(--muted)}
+  .row span:last-child{text-align:right}
+  .why{
+    padding:9px 0;margin:8px 0;border-top:1px dashed var(--rule);
+    border-bottom:1px dashed var(--rule);color:#31465c;font-family:var(--body);font-size:13px;
+  }
+  .step{display:grid;grid-template-columns:20px 1fr;gap:9px;padding:6px 0}
+  .step .n{color:var(--muted)}
+  .step .b{font-weight:600}
+  .step .d{color:var(--muted)}
+  .stamp{
+    display:inline-block;margin:10px 0 4px;padding:3px 9px;font-size:10px;
+    letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--lost);color:var(--lost);
+  }
+  .msg{
+    margin:10px 0 4px;padding:10px 12px;background:#fff;border:1px solid var(--rule);
+    font-family:var(--body);font-size:13px;color:#31465c;
+  }
+  .msg b{
+    display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-weight:500;
+  }
+  .versus{
+    margin:12px -18px 0;padding:11px 18px;background:#f1f0ec;border-top:1px solid var(--rule);
+    color:var(--muted);font-size:11px;
+  }
+  .versus b{color:var(--lost);font-weight:500}
+
+  footer{
+    margin-top:72px;padding-top:26px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8;
+  }
+  @media(prefers-reduced-motion:reduce){
+    .bar,.duo i{transition:none !important}
+  }
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Every failed payment is a decision, <em>not a retry</em>.</h1>
+  <p class="standfirst">
+    Recover reads a failed payment, works out why it actually failed, and picks
+    the one action most likely to bring the money back — which rail, which
+    moment, which channel, or nothing at all. Measured against the fixed
+    <span style="font-family:var(--mono);font-size:.92em">+1h / +24h / +72h</span>
+    schedule most dunning runs on today.
+  </p>
+  <div class="meta" id="meta"></div>
+</header>
+
+<div class="figures" id="figures"></div>
+
+<section>
+  <h2>Where the money comes from</h2>
+  <p class="lede">
+    Each rung adds exactly one capability to the one above it, on the same
+    held-out payments in the same world. Net rupees, after every attempt fee,
+    message cost and risk penalty.
+  </p>
+  <div class="ladder" id="ladder"></div>
+</section>
+
+<section class="split">
+  <div>
+    <h2>Scorecard</h2>
+    <p class="lede">Held-out payments only. The model never saw them.</p>
+    <table id="scorecard"></table>
+  </div>
+  <div>
+    <h2>By root cause</h2>
+    <p class="lede">
+      Teal is Recover, grey is the fixed schedule. The gaps are where a
+      schedule cannot help: it has no way to notice a bank came back up, and no
+      way to stop.
+    </p>
+    <div id="causes"></div>
+  </div>
+</section>
+
+<section>
+  <h2>The decision tape</h2>
+  <p class="lede">
+    Live traces from held-out payments, largest first. Every line is what the
+    agent saw and what it chose to do about it.
+  </p>
+  <div class="filters" id="filters"></div>
+  <div class="tapes" id="tapes"></div>
+</section>
+
+<footer id="footer"></footer>
+</div>
+
+<script id="payload" type="application/json">__RESULTS_JSON__</script>
+<script>
+(function(){
+  const raw = document.getElementById('payload').textContent;
+  if (raw.indexOf('__RESULTS') === 0) {
+    document.body.innerHTML =
+      '<div style="font-family:monospace;padding:40px;max-width:60ch">' +
+      'No results baked in. Run:<br><br>' +
+      'python scripts/run_experiment.py<br>python scripts/build_dashboard.py</div>';
+    return;
+  }
+  const D = JSON.parse(raw);
+
+  // ---- formatting -----------------------------------------------------
+  const inr = n => {
+    const a = Math.abs(n);
+    if (a >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+    if (a >= 1e5) return '₹' + (n/1e5).toFixed(2) + ' L';
+    if (a >= 1e3) return '₹' + Math.round(n/1e3) + 'k';
+    return '₹' + Math.round(n);
+  };
+  const rupees = n => '₹' + Math.round(n).toLocaleString('en-IN');
+  const pct = n => (100*n).toFixed(1) + '%';
+  const title = s => s.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+  const hrs = h => h < 1 ? Math.round(h*60) + ' min' : (h < 24 ? h + ' h' : (h/24) + ' d');
+  const el = (tag, cls, html) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  };
+
+  const A = D.agent, B = D.baseline, X = D.delta;
+
+  // ---- masthead meta --------------------------------------------------
+  document.getElementById('meta').innerHTML = [
+    ['Held-out payments', D.world.test_payments.toLocaleString('en-IN')],
+    ['Logged attempts trained on', D.model.n_train.toLocaleString('en-IN')],
+    ['Model AUC', D.model.auc.toFixed(3)],
+    ['Brier', D.model.brier.toFixed(3)],
+    ['Outages detected', D.world.outages_detected + ' of ' + D.world.outage_windows]
+  ].map(([k,v]) => k + ' <b>' + v + '</b>').join('');
+
+  // ---- headline figures ----------------------------------------------
+  const figs = [
+    ['+' + X.recovery_rate_lift_pp + 'pp', 'Recovery rate, ' + pct(B.recovery_rate) +
+      ' → ' + pct(A.recovery_rate)],
+    [inr(X.net_lift), 'Extra net revenue on ' + D.world.test_payments.toLocaleString('en-IN') +
+      ' failed payments'],
+    [X.attempts_saved_pct + '%', 'Fewer attempts against the customer and the card networks'],
+    [X.risk_retries_avoided.toLocaleString('en-IN'), 'Risk-declined payments the fixed schedule ' +
+      're-presented, and Recover did not']
+  ];
+  document.getElementById('figures').innerHTML = figs.map(([n,l]) =>
+    '<div class="fig"><span class="n up">' + n + '</span><span class="l">' + l + '</span></div>'
+  ).join('');
+
+  // ---- ablation ladder ------------------------------------------------
+  const ladder = document.getElementById('ladder');
+  const rungs = [{label: B.label, net: B.net, base: true}]
+    .concat(D.ablation.map(r => ({label: r.label, net: r.net, attempts: r.attempts})));
+  const maxNet = Math.max.apply(null, rungs.map(r => r.net)) * 1.06;
+
+  rungs.forEach(r => {
+    const row = el('div', 'rung' + (r.base ? ' base' : ''));
+    row.appendChild(el('div','name', r.label +
+      (r.base ? '<span>what runs today</span>' : '')));
+    const track = el('div','track');
+    const bar = el('div','bar');
+    track.appendChild(bar);
+    if (!r.base) {
+      const m = el('div','marker');
+      m.style.left = (100*B.net/maxNet) + '%';
+      track.appendChild(m);
+    }
+    row.appendChild(track);
+    row.appendChild(el('div','v', inr(r.net)));
+    ladder.appendChild(row);
+    requestAnimationFrame(() => { bar.style.width = (100*r.net/maxNet) + '%'; });
+  });
+
+  // ---- scorecard ------------------------------------------------------
+  const rows = [
+    ['Payments recovered', B.recovered_count.toLocaleString('en-IN'),
+      A.recovered_count.toLocaleString('en-IN'), 'good'],
+    ['Recovery rate', pct(B.recovery_rate), pct(A.recovery_rate), 'good'],
+    ['Gross recovered', rupees(B.recovered_value), rupees(A.recovered_value), 'good'],
+    ['Attempts used', B.attempts.toLocaleString('en-IN'), A.attempts.toLocaleString('en-IN'), 'good'],
+    ['Attempts per payment', B.attempts_per_payment, A.attempts_per_payment, 'good'],
+    ['Attempt + message cost', rupees(B.cost), rupees(A.cost), 'good'],
+    ['Risk declines re-presented', B.risk_retries.toLocaleString('en-IN'),
+      A.risk_retries.toLocaleString('en-IN'), 'good']
+  ];
+  let html = '<tr><th>Metric</th><th>Fixed schedule</th><th>Recover</th></tr>';
+  rows.forEach(([k,b,a,cls]) => {
+    html += '<tr><td>' + k + '</td><td class="num">' + b +
+            '</td><td class="num ' + cls + '">' + a + '</td></tr>';
+  });
+  html += '<tr class="total"><td>Net revenue recovered</td><td class="num">' +
+          rupees(B.net) + '</td><td class="num good">' + rupees(A.net) + '</td></tr>';
+  document.getElementById('scorecard').innerHTML = html;
+
+  // ---- by cause -------------------------------------------------------
+  const causes = document.getElementById('causes');
+  const keys = Object.keys(A.by_cause).sort((x,y) => A.by_cause[y].n - A.by_cause[x].n);
+  keys.forEach(k => {
+    const a = A.by_cause[k], b = B.by_cause[k] || {rate:0};
+    const c = el('div','cause');
+    c.innerHTML =
+      '<div class="top"><div class="k">' + title(k) +
+        '<small>' + (D.cause_blurbs[k] || '') + '</small></div>' +
+      '<div class="pct">' + pct(b.rate) + ' → <b>' + pct(a.rate) + '</b></div></div>' +
+      '<div class="duo"><i class="a"></i><i></i></div>';
+    causes.appendChild(c);
+    const bars = c.querySelectorAll('.duo i');
+    requestAnimationFrame(() => {
+      bars[0].style.width = (100*a.rate) + '%';
+      bars[1].style.width = (100*b.rate) + '%';
+    });
+  });
+
+  // ---- decision tape --------------------------------------------------
+  const tapes = document.getElementById('tapes');
+  const present = Array.from(new Set(D.traces.map(t => t.cause)));
+
+  function render(filter){
+    tapes.innerHTML = '';
+    D.traces.filter(t => !filter || t.cause === filter).forEach(t => {
+      const card = el('div','tape');
+      let h =
+        '<div class="hd"><div class="amt">' + rupees(t.amount) + '</div>' +
+        '<div class="id">' + t.payment_id + '</div></div>' +
+        row('rail', t.method.toUpperCase() + ' · ' + t.bank +
+            (t.network !== 'na' ? ' · ' + t.network : '')) +
+        row('gateway said', t.reason) +
+        row('classified as', title(t.cause)) +
+        row('rail health', (100*t.rail_health).toFixed(0) + '%' +
+            (t.rail_degraded ? ' · degraded, back in ~' + t.expected_recovery_h + 'h' : ' · normal'));
+
+      if (t.cause === 'soft_funds') h += row('payday in', t.days_to_payday + ' days');
+      if (t.is_subscription) h += row('type', 'subscription');
+
+      h += '<div class="why">' + t.cause_blurb + '</div>';
+
+      if (t.suppressed) {
+        h += '<div class="stamp">No attempt</div>' +
+             '<div style="color:var(--muted);font-family:var(--body);font-size:13px">' +
+             t.suppress_reason + '</div>';
+      } else {
+        t.actions.forEach((a,i) => {
+          h += '<div class="step"><span class="n">' + (i+1) + '.</span><span>' +
+               '<span class="b">' + a.play_label + '</span> — ' + hrs(a.delay_h) +
+               ' after failure' + (a.nudge ? ', ' + a.nudge : '') +
+               '<br><span class="d">p(recover) ' + (100*a.p_recover).toFixed(1) +
+               '% · expected ' + rupees(a.ev) + '</span></span></div>';
+        });
+        h += '<div class="row" style="border-top:1px dashed var(--rule);margin-top:8px;padding-top:8px">' +
+             '<span>plan value</span><span><b>' + rupees(t.expected_value) + '</b></span></div>';
+      }
+
+      if (t.nudge_copy) {
+        h += '<div class="msg"><b>' + (t.nudge_source === 'claude' ?
+             'Message written by Claude' : 'Message') + '</b>' + t.nudge_copy + '</div>';
+      }
+
+      const bl = t.baseline_actions.map(a => hrs(a.delay_h)).join(' → ');
+      h += '<div class="versus">Fixed schedule would have: <b>' +
+           (t.cause === 'risk_block' ? 're-presented a fraud decline three times'
+            : 'retried the same ' + t.method + ' at ' + bl) + '</b></div>';
+
+      card.innerHTML = h;
+      tapes.appendChild(card);
+    });
+  }
+  function row(k,v){ return '<div class="row"><span>' + k + '</span><span>' + v + '</span></div>'; }
+
+  const fb = document.getElementById('filters');
+  [['All', null]].concat(present.map(c => [title(c), c])).forEach(([label, val], i) => {
+    const b = el('button', null, label);
+    b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    b.onclick = () => {
+      fb.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      render(val);
+    };
+    fb.appendChild(b);
+  });
+  render(null);
+
+  document.getElementById('footer').innerHTML =
+    'Generated ' + D.generated_at + ' · full run in ' + D.runtime_s + 's · ' +
+    D.world.payments.toLocaleString('en-IN') + ' simulated failed payments, ' +
+    D.world.train_payments.toLocaleString('en-IN') + ' used for training, ' +
+    D.world.test_payments.toLocaleString('en-IN') + ' held out.<br>' +
+    'Payment outcomes come from a ground-truth simulator the agent cannot read. ' +
+    'The model learns only from logged attempts, exactly as it would from ' +
+    'production retry logs.';
+})();
+</script>
