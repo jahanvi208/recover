@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Recover — failed payment recovery</title>
+<title>Recover: failed payment recovery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -200,7 +200,7 @@
   <h1>Every failed payment is a decision, <em>not a retry</em>.</h1>
   <p class="standfirst">
     Recover reads a failed payment, works out why it actually failed, and picks
-    the one action most likely to bring the money back — which rail, which
+    the one action most likely to bring the money back: which rail, which
     moment, which channel, or nothing at all. Measured against the fixed
     <span style="font-family:var(--mono);font-size:.92em">+1h / +24h / +72h</span>
     schedule most dunning runs on today.
@@ -4193,7 +4193,7 @@
       } else {
         t.actions.forEach((a,i) => {
           h += '<div class="step"><span class="n">' + (i+1) + '.</span><span>' +
-               '<span class="b">' + a.play_label + '</span> — ' + hrs(a.delay_h) +
+               '<span class="b">' + a.play_label + '</span>, ' + hrs(a.delay_h) +
                ' after failure' + (a.nudge ? ', ' + a.nudge : '') +
                '<br><span class="d">p(recover) ' + (100*a.p_recover).toFixed(1) +
                '% · expected ' + rupees(a.ev) + '</span></span></div>';
